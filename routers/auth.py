@@ -1,4 +1,4 @@
-from typing_extensions import Annotated
+from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, EmailStr, constr
 from models import Users
@@ -139,7 +139,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 
 
 # Route handler function to update user's password
-@router.put("/forget_password", status_code=status.HTTP_204_NO_CONTENT)
+@router.put("/forget_password", status_code=status.HTTP_200_OK)
 async def password_update(
     password_update_request: PasswordUpdate,
     db: Session = Depends(get_db)
@@ -156,7 +156,8 @@ async def password_update(
         (Users.username == password_update_request.username_or_email) | (Users.email == password_update_request.username_or_email)
     ).update({Users.hashed_password: new_hashed_password})
     db.commit()
-    return {"message": "Password updated successfully"}
+
+    return {"message": "Password changed successfully"}
 
 
 @router.put("/reset_password")
