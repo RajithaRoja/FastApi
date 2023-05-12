@@ -1,10 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import models
+import uvicorn
 from database import engine
 from routers import auth
 
-app = FastAPI()
+app = FastAPI(debug=True)
+
+# Your existing code for routes and other configurations
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
 origins = [
     "http://localhost:4200"
