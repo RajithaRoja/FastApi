@@ -35,6 +35,11 @@ class CreateUserRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+        
+
+class UserCredentials(BaseModel):
+    username: str
+    password: str
 
 
 class passwordupdate(BaseModel):
@@ -122,18 +127,35 @@ async def create_user(db: db_dependency,
     db.commit()
 
 
-# Creating access token
 @router.post("/token")
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-                                 db: db_dependency):
-    user = authenticate_user(form_data.username, form_data.password, db)
+async def login_for_access_token(
+    credentials: UserCredentials,
+    db: Session = Depends(get_db)
+):
+    # Extract username_or_email and password from the credentials
+    username_or_email = credentials.username
+    password = credentials.password
+
+    # Find user by username or email in the database
+    user = db.query(Users).filter(
+        (Users.username == username_or_email) |
+        (Users.email == username_or_email)
+    ).first()
     if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Authenticate the user
+    if not authenticate_user(username_or_email, password, db):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
             headers={"WWW-Authenticate": "Bearer"}
         )
-    # Fixed argument order
+
+    # Generate the access token
     token = create_access_token(user.id, user.username, timedelta(minutes=20))
     return {'access_token': token, 'token_type': 'bearer'}
 
