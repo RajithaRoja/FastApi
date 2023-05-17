@@ -28,7 +28,7 @@ class CreateUserRequest(BaseModel):
     username: str
     email: EmailStr
     gender: constr(strip_whitespace=True, regex='^(male|female|others)$')
-    phone_number: str
+    phone_number: int
     password: str
 
 
