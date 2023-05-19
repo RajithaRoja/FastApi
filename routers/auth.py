@@ -208,16 +208,7 @@ async def reset_password(password_update: passwordupdate,
 
 
 @router.get("/users", status_code=status.HTTP_200_OK)
-async def get_users(db: db_dependency, current_user: dict = Depends(get_current_user)):
-    # Check if the current user is authenticated
-    if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-    
-    # Check if the current user has the necessary permissions (if applicable)
-    # Add your permission logic here
-    
-    # Retrieve all users from the database
+async def get_users(db: Session = Depends(get_db)):
+    # Fetch all users from the database
     users = db.query(Users).all()
-    
-    # Return the users as the response
     return users
