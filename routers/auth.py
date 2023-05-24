@@ -47,11 +47,6 @@ class PasswordResetRequest(BaseModel):
     confirm_password: str
 
 
-class PasswordUpdate(BaseModel):
-    username_or_email: str = Field(..., alias="username")
-    new_password: str = Field(..., alias="newPassword")
-    confirm_password: str = Field(..., alias="confirmPassword")
-
 
 # Dependency to get a database
 def get_db():
@@ -187,31 +182,6 @@ async def reset_password(
     # You can also send a confirmation email here if desired
 
     return {"message": "Password reset successful"}
-
-
-@router.put("/reset_password")
-async def reset_password(password_update: passwordupdate,
-                         current_user: dict = Depends(get_current_user),
-                         db: Session = Depends(get_db)):
-    user = db.query(Users).filter(Users.id == current_user['id']).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    old_password = password_update.old_password
-    new_password = password_update.new_password
-    confirm_password = password_update.confirm_password
-
-    if not bcrypt_context.verify(old_password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect old password")
-
-    if new_password != confirm_password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password and confirm password do not match")
-
-    hashed_password = bcrypt_context.hash(new_password)
-    user.hashed_password = hashed_password
-    db.commit()
-
-    return {"message": "Password updated successfully"}
 
 
 @router.get("/users", status_code=status.HTTP_200_OK)
