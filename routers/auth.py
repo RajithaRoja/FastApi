@@ -41,10 +41,10 @@ class UserCredentials(BaseModel):
     username: str
     password: str
 
-class PasswordResetRequest(BaseModel):
-    username_or_email: str
-    new_password: str
-    confirm_password: str
+class PasswordUpdate(BaseModel):
+    username_or_email: str = Field(..., alias="username")
+    new_password: str = Field(..., alias="newPassword")
+    confirm_password: str = Field(..., alias="confirmPassword")
 
 
 
@@ -154,34 +154,29 @@ async def login_for_access_token(
     return {'access_token': token, 'token_type': 'bearer'}
 
 
-@router.post("/forget_password", status_code=status.HTTP_200_OK)
-async def reset_password(
-    password_reset_request: PasswordResetRequest,
+@router.put("/forget_password", status_code=status.HTTP_200_OK)
+async def password_update(
+    password_update_request: PasswordUpdate,
     db: Session = Depends(get_db)
 ):
-    # Check if the user exists based on the username or email
     user = db.query(Users).filter(
-        (Users.username == password_reset_request.username_or_email) |
-        (Users.email == password_reset_request.username_or_email)
+        (Users.username == password_update_request.username_or_email) |
+        (Users.email == password_update_request.username_or_email)
     ).first()
-
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    # Verify that the new password and confirm password match
-    if password_reset_request.new_password != password_reset_request.confirm_password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password and confirm password do not match")
-
-    # Generate the hashed password
-    hashed_password = bcrypt_context.hash(password_reset_request.new_password)
-
-    # Update the user's password in the database
-    user.hashed_password = hashed_password
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+    if password_update_request.new_password != password_update_request.confirm_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail='New password and confirm password do not match')
+    new_hashed_password = bcrypt_context.hash(password_update_request.new_password)
+    db.query(Users).filter(
+        (Users.username == password_update_request.username_or_email) |
+        (Users.email == password_update_request.username_or_email)
+    ).update({Users.hashed_password: new_hashed_password})
     db.commit()
 
-    # You can also send a confirmation email here if desired
+    return {"message": "Password changed successfully"}
 
-    return {"message": "Password reset successful"}
 
 
 @router.get("/users", status_code=status.HTTP_200_OK)
