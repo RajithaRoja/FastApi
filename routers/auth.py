@@ -41,11 +41,11 @@ class UserCredentials(BaseModel):
     username: str
     password: str
         
-        
-class ChangePassword(BaseModel):
-    username_or_email: str 
-    new_password: str 
-    confirm_password: str 
+class PasswordResetRequest(BaseModel):
+    username_or_email: str
+    new_password: str
+    confirm_password: str
+
 
 
 # Dependency to get a database
@@ -153,19 +153,28 @@ async def login_for_access_token(
     token = create_access_token(user.id, user.username, timedelta(minutes=20))
     return {'access_token': token, 'token_type': 'bearer'}
 
+@router.put("/reset__password", status_code=status.HTTP_200_OK)
+async def reset_password(
+    password_reset_request: PasswordResetRequest,
+    db: Session = Depends(get_db)
+):
+    user = db.query(Users).filter(
+        (Users.username == password_reset_request.username_or_email) |
+        (Users.email == password_reset_request.username_or_email)
+    ).first()
 
-@router.put('/forget_password')
-async def change_user_password(change_password: ChangePassword, db: db_dependency):
-    user = db.query(UserInput).filter((UserInput.email == change_password.username_or_email) |
-                                      (UserInput.username == change_password.username_or_email)).first()
     if not user:
-        raise HTTPException(status_code=404, detail='User not found')
-    if change_password.new_password != change_password.confirm_password:
-        raise HTTPException(status_code=400, detail="New password and confirm password should be same")
-    new_password_hashed = bcrypt_context.hash(change_password.new_password)
-    user.password = new_password_hashed
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if password_reset_request.new_password != password_reset_request.confirm_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password and confirm password do not match")
+
+    hashed_password = bcrypt_context.hash(password_reset_request.new_password)
+
+    user.hashed_password = hashed_password
     db.commit()
-    return {'message': 'Password changed successfully'}
+
+    return {"message": "Password reset successful"}
 
 
 @router.get("/users", status_code=status.HTTP_200_OK)
