@@ -40,12 +40,12 @@ class Token(BaseModel):
 class UserCredentials(BaseModel):
     username: str
     password: str
-
-class PasswordUpdate(BaseModel):
-    username_or_email: str = Field(..., alias="username")
-    new_password: str = Field(..., alias="newPassword")
-    confirm_password: str = Field(..., alias="confirmPassword")
-
+        
+        
+class ChangePassword(BaseModel):
+    username_or_email: str = Form(...)
+    new_password: str = Form(...)
+    confirm_password: str = Form(...)
 
 
 # Dependency to get a database
@@ -154,29 +154,18 @@ async def login_for_access_token(
     return {'access_token': token, 'token_type': 'bearer'}
 
 
-@router.put("/forget_password", status_code=status.HTTP_200_OK)
-async def password_update(
-    password_update_request: PasswordUpdate,
-    db: Session = Depends(get_db)
-):
-    user = db.query(Users).filter(
-        (Users.username == password_update_request.username_or_email) |
-        (Users.email == password_update_request.username_or_email)
-    ).first()
+@app.put('/change_user_password')
+async def change_user_password(change_password: ChangePassword, db: db_dependency):
+    user = db.query(UserInput).filter((UserInput.email == change_password.username_or_email) |
+                                      (UserInput.username == change_password.username_or_email)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
-    if password_update_request.new_password != password_update_request.confirm_password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail='New password and confirm password do not match')
-    new_hashed_password = bcrypt_context.hash(password_update_request.new_password)
-    db.query(Users).filter(
-        (Users.username == password_update_request.username_or_email) |
-        (Users.email == password_update_request.username_or_email)
-    ).update({Users.hashed_password: new_hashed_password})
+        raise HTTPException(status_code=404, detail='User not found')
+    if change_password.new_password != change_password.confirm_password:
+        raise HTTPException(status_code=400, detail="New password and confirm password should be same")
+    new_password_hashed = bcrypt_context.hash(change_password.new_password)
+    user.password = new_password_hashed
     db.commit()
-
-    return {"message": "Password changed successfully"}
-
+    return {'message': 'Password changed successfully'}
 
 
 @router.get("/users", status_code=status.HTTP_200_OK)
