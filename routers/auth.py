@@ -154,7 +154,7 @@ async def login_for_access_token(
     return {'access_token': token, 'token_type': 'bearer'}
 
 @router.put("/forget_password", status_code=status.HTTP_200_OK)
-async def reset_password(
+async def forget_password(
     password_reset_request: PasswordResetRequest,
     db: Session = Depends(get_db)
 ):
