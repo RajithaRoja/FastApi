@@ -1,6 +1,6 @@
 from typing_extensions import Annotated
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, EmailStr, Form
+from pydantic import BaseModel, Field, EmailStr
 from models import Users
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
@@ -43,9 +43,9 @@ class UserCredentials(BaseModel):
         
         
 class ChangePassword(BaseModel):
-    username_or_email: str = Form(...)
-    new_password: str = Form(...)
-    confirm_password: str = Form(...)
+    username_or_email: str 
+    new_password: str 
+    confirm_password: str 
 
 
 # Dependency to get a database
