@@ -153,7 +153,7 @@ async def login_for_access_token(
     token = create_access_token(user.id, user.username, timedelta(minutes=20))
     return {'access_token': token, 'token_type': 'bearer'}
 
-@router.put("/reset__password", status_code=status.HTTP_200_OK)
+@router.put("/forget_password", status_code=status.HTTP_200_OK)
 async def reset_password(
     password_reset_request: PasswordResetRequest,
     db: Session = Depends(get_db)
