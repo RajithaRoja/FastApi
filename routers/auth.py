@@ -154,7 +154,7 @@ async def login_for_access_token(
     return {'access_token': token, 'token_type': 'bearer'}
 
 
-@app.put('/change_user_password')
+@app.put('/forget_password')
 async def change_user_password(change_password: ChangePassword, db: db_dependency):
     user = db.query(UserInput).filter((UserInput.email == change_password.username_or_email) |
                                       (UserInput.username == change_password.username_or_email)).first()
