@@ -174,7 +174,7 @@ async def forget_password(
     user.hashed_password = hashed_password
     db.commit()
 
-    return {"message": "Password reset successful"}
+    return {"message": "Password updated successful"}
 
 
 @router.get("/users", status_code=status.HTTP_200_OK)
